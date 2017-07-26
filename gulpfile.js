@@ -110,8 +110,9 @@ gulp.task('connect', function() {
 });
 
 gulp.task('open', function() {
-	return gulp.src('./dist/index.html')
-	.pipe(open());
+	return gulp
+		.src(__filename)
+		.pipe(open({uri: 'http://localhost:8080'}));
 });
 
 gulp.task('dev', function(callback) {
