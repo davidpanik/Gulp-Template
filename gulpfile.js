@@ -13,13 +13,44 @@ var sourcemaps = require('gulp-sourcemaps');
 var uglify = require('gulp-uglify');
 var uglifycss = require('gulp-uglifycss');
 var open = require('gulp-open');
+var fileinclude = require('gulp-file-include');
 
 var paths = {
-	static: ['src/**/*', '!src/scripts/**/*', '!src/styles/**/*', '!src/images/**/*'],
+	static: ['src/**/*', '!src/**/*.html', '!src/scripts/**/*', '!src/styles/**/*', '!src/images/**/*'],
+	html: 'src/**/*.html',
+	includes: 'src/includes/**/*.html',
 	images: 'src/images/**/*',
 	styles: 'src/styles/**/*',
 	scripts: 'src/scripts/'
 };
+
+gulp.task('fileinclude-dev', function() {
+	return gulp
+		.src(paths.html)
+		.pipe(fileinclude({
+			prefix: '@@',
+			basepath: '@file',
+			indent: true,
+			context: {
+				task: 'dev'
+			}
+		}))
+		.pipe(gulp.dest('dist/'));
+});
+
+gulp.task('fileinclude-build', function() {
+	return gulp
+		.src(paths.html)
+		.pipe(fileinclude({
+			prefix: '@@',
+			basepath: '@file',
+			indent: true,
+			context: {
+				task: 'build'
+			}
+		}))
+		.pipe(gulp.dest('dist/'));
+});
 
 gulp.task('copy-static', function() {
 	return gulp
@@ -94,6 +125,7 @@ gulp.task('reload', function() {
 
 gulp.task('watch', function() {
 	gulp.watch(paths.static, function() { sequence('copy-static', 'reload'); });
+	gulp.watch(paths.html, function() { sequence('fileinclude-dev', 'reload'); });
 	gulp.watch(paths.images, function() { sequence('copy-images', 'reload'); });
 	gulp.watch(paths.scripts + '**/*', function() { sequence('babelify', 'reload'); });
 	gulp.watch(paths.styles, function() { sequence('sass', 'reload'); });
@@ -116,11 +148,11 @@ gulp.task('open', function() {
 });
 
 gulp.task('dev', function(callback) {
-	sequence('clean', 'copy-static', 'copy-images', 'sass', 'babelify', 'connect', 'open', 'watch', callback);
+	sequence('clean', 'copy-static', 'copy-images', 'fileinclude-dev', 'sass', 'babelify', 'connect', 'open', 'watch', callback);
 });
 
 gulp.task('build', function(callback) {
-	sequence('clean', 'copy-static', 'imagemin', 'sass-build', 'babelify-build', callback);
+	sequence('clean', 'copy-static', 'imagemin', 'fileinclude-build', 'sass-build', 'babelify-build', callback);
 });
 
 gulp.task('default', ['dev']);
