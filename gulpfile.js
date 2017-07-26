@@ -12,6 +12,7 @@ var autoprefixer = require('gulp-autoprefixer');
 var sourcemaps = require('gulp-sourcemaps');
 var uglify = require('gulp-uglify');
 var uglifycss = require('gulp-uglifycss');
+var open = require('gulp-open');
 
 var paths = {
 	static: ['src/**/*', '!src/scripts/**/*', '!src/styles/**/*', '!src/images/**/*'],
@@ -108,8 +109,13 @@ gulp.task('connect', function() {
 	});
 });
 
+gulp.task('open', function() {
+	return gulp.src('./dist/index.html')
+	.pipe(open());
+});
+
 gulp.task('dev', function(callback) {
-	sequence('clean', 'copy-static', 'copy-images', 'sass', 'babelify', 'connect', 'watch', callback);
+	sequence('clean', 'copy-static', 'copy-images', 'sass', 'babelify', 'connect', 'open', 'watch', callback);
 });
 
 gulp.task('build', function(callback) {
