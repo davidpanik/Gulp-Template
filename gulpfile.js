@@ -61,7 +61,7 @@ gulp.task('fileinclude', function() {
 			basepath: '@file',
 			indent: true,
 			context: {
-				task: 'dev'
+				task: 'develop'
 			}
 		}))
 		.pipe(gulp.dest('dist/'));
@@ -153,7 +153,7 @@ gulp.task('reload', function() {
 
 
 
-gulp.task('dev', function(callback) {
+gulp.task('develop', function(callback) {
 	sequence('clean', 'copy-static', 'copy-images', 'fileinclude', 'sass', 'babelify', 'connect', 'open', 'watch', callback);
 });
 
@@ -161,4 +161,4 @@ gulp.task('build', function(callback) {
 	sequence('clean', 'copy-static', 'imagemin', 'fileinclude-build', 'sass-build', 'babelify-build', callback);
 });
 
-gulp.task('default', ['dev']);
+gulp.task('default', ['develop']);
