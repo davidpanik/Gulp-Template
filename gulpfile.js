@@ -22,35 +22,42 @@ var paths = {
 	includes: 'src/includes/**/*.html',
 	scripts: 'src/scripts/',
 	static: ['src/**/*', '!src/**/*.html', '!src/scripts/**/*', '!src/styles/**/*', '!src/images/**/*'],
-	styles: 'src/styles/**/*'
+	styles: 'src/styles/**/*',
+
+	output: 'dist/'
 };
 
+var ports = {
+	public: 8000,
+	livereload: 35729
+};
 
+var host = 'localhost';
 
 
 gulp.task('clean', function() {
 	return gulp
-		.src('dist/')
+		.src(paths.output)
 		.pipe(clean());
 });
 
 gulp.task('copy-static', function() {
 	return gulp
 		.src(paths.static)
-		.pipe(gulp.dest('dist/'));
+		.pipe(gulp.dest(paths.output));
 });
 
 gulp.task('copy-images', function() {
 	return gulp
 		.src(paths.images)
-		.pipe(gulp.dest('dist/images'));
+		.pipe(gulp.dest(paths.output + 'images'));
 });
 
 gulp.task('imagemin', function() {
 	return gulp
 		.src(paths.images)
 		.pipe(imagemin())
-		.pipe(gulp.dest('dist/images'));
+		.pipe(gulp.dest(paths.output + 'images'));
 });
 
 gulp.task('fileinclude', function() {
@@ -64,7 +71,7 @@ gulp.task('fileinclude', function() {
 				task: 'develop'
 			}
 		}))
-		.pipe(gulp.dest('dist/'));
+		.pipe(gulp.dest(paths.output));
 });
 
 gulp.task('fileinclude-build', function() {
@@ -78,7 +85,7 @@ gulp.task('fileinclude-build', function() {
 				task: 'build'
 			}
 		}))
-		.pipe(gulp.dest('dist/'));
+		.pipe(gulp.dest(paths.output));
 });
 
 gulp.task('sass', function() {
@@ -88,7 +95,7 @@ gulp.task('sass', function() {
 		.pipe(sass({errLogToConsole: true}).on('error', sass.logError))
 		.pipe(autoprefixer())
 		.pipe(sourcemaps.write())
-		.pipe(gulp.dest('dist/styles/'));
+		.pipe(gulp.dest(paths.output + 'styles'));
 });
 
 gulp.task('sass-build', function() {
@@ -97,7 +104,7 @@ gulp.task('sass-build', function() {
 		.pipe(sass({errLogToConsole: true}).on('error', sass.logError))
 		.pipe(autoprefixer())
 		.pipe(uglifycss())
-		.pipe(gulp.dest('dist/styles/'));
+		.pipe(gulp.dest(paths.output + 'styles'));
 });
 
 gulp.task('babelify', function() {
@@ -107,7 +114,7 @@ gulp.task('babelify', function() {
 		.on('error', function (err) { console.error(err); })
 		.pipe(source('main.js'))
 		.pipe(buffer())
-		.pipe(gulp.dest('dist/scripts'));
+		.pipe(gulp.dest(paths.output + 'scripts'));
 });
 
 gulp.task('babelify-build', function() {
@@ -118,15 +125,17 @@ gulp.task('babelify-build', function() {
 		.pipe(source('main.js'))
 		.pipe(buffer())
 		.pipe(uglify())
-		.pipe(gulp.dest('dist/scripts'));
+		.pipe(gulp.dest(paths.output + 'scripts'));
 });
 
 gulp.task('connect', function() {
 	return connect.server({
 		root: 'dist/',
+		host: host,
+		port: ports.public,
 		livereload: {
-			hostname: 'localhost',
-			port: 35729
+			hostname: host,
+			port: ports.livereload
 		}
 	});
 });
@@ -134,20 +143,20 @@ gulp.task('connect', function() {
 gulp.task('open', function() {
 	return gulp
 		.src(__filename)
-		.pipe(open({uri: 'http://localhost:8080'}));
+		.pipe(open({uri: 'http://' + host + ':' + ports.public}));
 });
 
 gulp.task('watch', function() {
-	gulp.watch(paths.static, function() { sequence('copy-static', 'reload'); });
 	gulp.watch(paths.html, function() { sequence('fileinclude', 'reload'); });
 	gulp.watch(paths.images, function() { sequence('copy-images', 'reload'); });
 	gulp.watch(paths.scripts + '**/*', function() { sequence('babelify', 'reload'); });
+	gulp.watch(paths.static, function() { sequence('copy-static', 'reload'); });
 	gulp.watch(paths.styles, function() { sequence('sass', 'reload'); });
 });
 
 gulp.task('reload', function() {
 	return gulp
-		.src('dist/**/*')
+		.src(paths.output + '**/*')
 		.pipe(connect.reload());
 });
 
