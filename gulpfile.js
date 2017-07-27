@@ -1,30 +1,59 @@
-var gulp = require('gulp');
-var babelify = require('babelify');
-var browserify = require('browserify');
-var buffer = require('vinyl-buffer');
-var source = require('vinyl-source-stream');
-var clean = require('gulp-clean');
-var sass = require('gulp-sass');
-var imagemin = require('gulp-imagemin');
-var connect = require('gulp-connect');
-var sequence = require('run-sequence');
-var autoprefixer = require('gulp-autoprefixer');
-var sourcemaps = require('gulp-sourcemaps');
-var uglify = require('gulp-uglify');
-var uglifycss = require('gulp-uglifycss');
-var open = require('gulp-open');
-var fileinclude = require('gulp-file-include');
+var
+	gulp = require('gulp'),
+	babelify = require('babelify'),
+	browserify = require('browserify'),
+	buffer = require('vinyl-buffer'),
+	source = require('vinyl-source-stream'),
+	clean = require('gulp-clean'),
+	sass = require('gulp-sass'),
+	imagemin = require('gulp-imagemin'),
+	connect = require('gulp-connect'),
+	sequence = require('run-sequence'),
+	autoprefixer = require('gulp-autoprefixer'),
+	sourcemaps = require('gulp-sourcemaps'),
+	uglify = require('gulp-uglify'),
+	uglifycss = require('gulp-uglifycss'),
+	open = require('gulp-open'),
+	fileinclude = require('gulp-file-include');
 
 var paths = {
-	static: ['src/**/*', '!src/**/*.html', '!src/scripts/**/*', '!src/styles/**/*', '!src/images/**/*'],
 	html: 'src/**/*.html',
-	includes: 'src/includes/**/*.html',
 	images: 'src/images/**/*',
-	styles: 'src/styles/**/*',
-	scripts: 'src/scripts/'
+	includes: 'src/includes/**/*.html',
+	scripts: 'src/scripts/',
+	static: ['src/**/*', '!src/**/*.html', '!src/scripts/**/*', '!src/styles/**/*', '!src/images/**/*'],
+	styles: 'src/styles/**/*'
 };
 
-gulp.task('fileinclude-dev', function() {
+
+
+
+gulp.task('clean', function() {
+	return gulp
+		.src('dist/')
+		.pipe(clean());
+});
+
+gulp.task('copy-static', function() {
+	return gulp
+		.src(paths.static)
+		.pipe(gulp.dest('dist/'));
+});
+
+gulp.task('copy-images', function() {
+	return gulp
+		.src(paths.images)
+		.pipe(gulp.dest('dist/images'));
+});
+
+gulp.task('imagemin', function() {
+	return gulp
+		.src(paths.images)
+		.pipe(imagemin())
+		.pipe(gulp.dest('dist/images'));
+});
+
+gulp.task('fileinclude', function() {
 	return gulp
 		.src(paths.html)
 		.pipe(fileinclude({
@@ -52,16 +81,23 @@ gulp.task('fileinclude-build', function() {
 		.pipe(gulp.dest('dist/'));
 });
 
-gulp.task('copy-static', function() {
+gulp.task('sass', function() {
 	return gulp
-		.src(paths.static)
-		.pipe(gulp.dest('dist/'));
+		.src(paths.styles)
+		.pipe(sourcemaps.init())
+		.pipe(sass({errLogToConsole: true}).on('error', sass.logError))
+		.pipe(autoprefixer())
+		.pipe(sourcemaps.write())
+		.pipe(gulp.dest('dist/styles/'));
 });
 
-gulp.task('copy-images', function() {
+gulp.task('sass-build', function() {
 	return gulp
-		.src(paths.images)
-		.pipe(gulp.dest('dist/images'));
+		.src(paths.styles)
+		.pipe(sass({errLogToConsole: true}).on('error', sass.logError))
+		.pipe(autoprefixer())
+		.pipe(uglifycss())
+		.pipe(gulp.dest('dist/styles/'));
 });
 
 gulp.task('babelify', function() {
@@ -85,52 +121,6 @@ gulp.task('babelify-build', function() {
 		.pipe(gulp.dest('dist/scripts'));
 });
 
-gulp.task('clean', function() {
-	return gulp
-		.src('dist/')
-		.pipe(clean());
-});
-
-gulp.task('sass', function() {
-	return gulp
-		.src(paths.styles)
-		.pipe(sourcemaps.init())
-		.pipe(sass({errLogToConsole: true}).on('error', sass.logError))
-		.pipe(autoprefixer())
-		.pipe(sourcemaps.write())
-		.pipe(gulp.dest('dist/styles/'));
-});
-
-gulp.task('sass-build', function() {
-	return gulp
-		.src(paths.styles)
-		.pipe(sass({errLogToConsole: true}).on('error', sass.logError))
-		.pipe(autoprefixer())
-		.pipe(uglifycss())
-		.pipe(gulp.dest('dist/styles/'));
-});
-
-gulp.task('imagemin', function() {
-	return gulp
-		.src(paths.images)
-		.pipe(imagemin())
-		.pipe(gulp.dest('dist/images'));
-});
-
-gulp.task('reload', function() {
-	return gulp
-		.src('dist/**/*')
-		.pipe(connect.reload());
-});
-
-gulp.task('watch', function() {
-	gulp.watch(paths.static, function() { sequence('copy-static', 'reload'); });
-	gulp.watch(paths.html, function() { sequence('fileinclude-dev', 'reload'); });
-	gulp.watch(paths.images, function() { sequence('copy-images', 'reload'); });
-	gulp.watch(paths.scripts + '**/*', function() { sequence('babelify', 'reload'); });
-	gulp.watch(paths.styles, function() { sequence('sass', 'reload'); });
-});
-
 gulp.task('connect', function() {
 	return connect.server({
 		root: 'dist/',
@@ -147,8 +137,24 @@ gulp.task('open', function() {
 		.pipe(open({uri: 'http://localhost:8080'}));
 });
 
+gulp.task('watch', function() {
+	gulp.watch(paths.static, function() { sequence('copy-static', 'reload'); });
+	gulp.watch(paths.html, function() { sequence('fileinclude', 'reload'); });
+	gulp.watch(paths.images, function() { sequence('copy-images', 'reload'); });
+	gulp.watch(paths.scripts + '**/*', function() { sequence('babelify', 'reload'); });
+	gulp.watch(paths.styles, function() { sequence('sass', 'reload'); });
+});
+
+gulp.task('reload', function() {
+	return gulp
+		.src('dist/**/*')
+		.pipe(connect.reload());
+});
+
+
+
 gulp.task('dev', function(callback) {
-	sequence('clean', 'copy-static', 'copy-images', 'fileinclude-dev', 'sass', 'babelify', 'connect', 'open', 'watch', callback);
+	sequence('clean', 'copy-static', 'copy-images', 'fileinclude', 'sass', 'babelify', 'connect', 'open', 'watch', callback);
 });
 
 gulp.task('build', function(callback) {
