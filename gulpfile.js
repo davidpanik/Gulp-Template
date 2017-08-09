@@ -137,7 +137,7 @@ gulp.task('babelify-build', function() {
 		.transform(babelify, { presets: ['es2015', 'react'], compact: false })
 		.bundle()
 		.on('error', function (err) { console.error(err); })
-		.pipe(source('main.js'))
+		.pipe(source('main.min.js'))
 		.pipe(buffer())
 		.pipe(uglify())
 		.pipe(gulp.dest(settings.paths.output.scripts));
