@@ -179,11 +179,11 @@ gulp.task('reload', function() {
 
 // === GROUPED TASKS ======
 gulp.task('develop', function(callback) {
-	sequence('clean', 'copy-static', 'copy-images', 'fileinclude', 'sass', 'babelify', 'connect', 'open', 'watch', callback);
+	sequence('clean', ['copy-static', 'copy-images', 'fileinclude', 'sass', 'babelify'], 'connect', 'open', 'watch', callback);
 });
 
 gulp.task('build', function(callback) {
-	sequence('clean', 'copy-static', 'imagemin', 'fileinclude-build', 'sass-build', 'babelify-build', callback);
+	sequence('clean', ['copy-static', 'imagemin', 'fileinclude-build', 'sass-build', 'babelify-build'], callback);
 });
 
 gulp.task('default', ['develop']);
